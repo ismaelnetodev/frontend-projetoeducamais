@@ -25,7 +25,7 @@ const Tab1: React.FC = () => {
           <IonCardTitle>Bem-vindo!</IonCardTitle>
         </IonCardHeader>
         <IonCardContent>
-          Este é o seu primeiro componente customizado.
+          Teste de mudança
           <IonButton expand="block" style={{ marginTop: '16px' }}>
             Clique-me
           </IonButton>
