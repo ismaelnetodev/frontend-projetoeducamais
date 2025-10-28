@@ -1,0 +1,34 @@
+ion-content.login-container::part(scroll) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; 
+    height: 100%;
+}
+
+.login-container ion-card {
+    max-width: 500px;
+    width: 100%;
+}
+
+
+.login-container ion-card-content {
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    height: 100%;
+}
+
+.login-container h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.login-container h2 {
+  font-size: 1.1rem;
+  font-weight: 300; /* Mais fino */
+  margin-top: 0;
+}
