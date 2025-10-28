@@ -1,63 +1,34 @@
 ion-content.login-container::part(scroll) {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center; 
-  height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; 
+    height: 100%;
+}
+
+.login-container ion-card {
+    max-width: 500px;
+    width: 100%;
 }
 
 
-.login-form-container {
- 
-  max-width: 400px; 
-  width: 90%;
-  
-
-  background: var(--ion-color-light, #f4f4f4);
-  padding: 20px;
-  border-radius: 16px; 
-  
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.login-container ion-card-content {
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    height: 100%;
 }
 
-
-.login-logo {
-  padding: 10px; 
+.login-container h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-top: 10px;
+  margin-bottom: 5px;
 }
 
-
-.login-logo ion-img {
-  width: 60%;
-  max-width: 200px;
-  margin: 0 auto 20px auto;
-}
-
-
-.login-form-container ion-list ion-item {
-
-  border: 1px solid red;
-
-  --inner-padding-top: 10px;  
-  --inner-padding-bottom: 10px;
-  
-  --padding-start: 8px; 
-
-  --border-style: none;
-
-  background: #ffffff;
-  border-radius: 8px;
-
-  margin-bottom: 15px;
-}b
-
-.login-error {
-  color: var(--ion-color-danger);
-  font-size: 0.9em;
-  margin-bottom: 10px;
-}
-
-.login-form-container IonButton {
-  --background: #aa413d; 
-  
-
+.login-container h2 {
+  font-size: 1.1rem;
+  font-weight: 300; /* Mais fino */
+  margin-top: 0;
 }
