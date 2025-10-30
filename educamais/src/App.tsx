@@ -6,20 +6,18 @@ import { useIonRouter } from '@ionic/react';
 
 import Login from './pages/Login/Login';
 import MainTabs from './MainTabs';
-
 import PainelGestor from './pages/PainelGestor';
 import PainelProfessor from './pages/PainelProfessor';
 import PainelAluno from './pages/PainelAluno';
+import MinhasTurmas from './pages/PainelProfessor';
+import TurmaDetalhes from './pages/DetalhesTurmas';
 
-/* Ionic Core e CSS */
+/* Ionic CSS */
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/normalize.css';
 import '@ionic/react/css/structure.css';
 import '@ionic/react/css/typography.css';
 import '@ionic/react/css/padding.css';
-import '@ionic/react/css/float-elements.css';
-import '@ionic/react/css/text-alignment.css';
-import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 import '@ionic/react/css/palettes/dark.system.css';
@@ -32,7 +30,6 @@ const AppRoutes: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [role, setRole] = useState<string | null>(null);
 
-  // Carrega o token inicial
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const storedRole = localStorage.getItem('userRole');
@@ -40,14 +37,12 @@ const AppRoutes: React.FC = () => {
     if (storedRole) setRole(storedRole);
   }, []);
 
-  // Reage à mudança no estado de autenticação
   useEffect(() => {
     if (isAuthenticated === null) return;
 
-    // Delay curto para o Ionic sincronizar o estado da rota antes de redirecionar
     const delayRedirect = setTimeout(() => {
       if (isAuthenticated && router.routeInfo.pathname === '/login') {
-        switch (role){
+        switch (role) {
           case 'GESTOR':
             router.push('/gestor', 'root');
             break;
@@ -55,7 +50,7 @@ const AppRoutes: React.FC = () => {
             router.push('/aluno', 'root');
             break;
           case 'PROFESSOR':
-            router.push('/professor', 'root');
+            router.push('/minhas-turmas', 'root');
             break;
           default:
             router.push('/', 'root');
@@ -69,27 +64,24 @@ const AppRoutes: React.FC = () => {
   }, [isAuthenticated, role, router]);
 
   const handleLoginSuccess = (token: string, role: string) => {
-    console.log("LOGIN SUCEDIDO");
-    // salva o token e atualiza o estado
     localStorage.setItem('authToken', 'tokensecreto');
     localStorage.setItem('userRole', role);
     setIsAuthenticated(true);
     setRole(role);
-    
+
     switch (role) {
       case 'GESTOR':
         router.push('/gestor', 'root');
         break;
       case 'PROFESSOR':
-        router.push('/professor', 'root');
+        router.push('/minhas-turmas', 'root');
         break;
       case 'ALUNO':
         router.push('/aluno', 'root');
         break;
       default:
         router.push('/', 'root');
-    }    
-
+    }
   };
 
   const handleLogout = () => {
@@ -114,15 +106,23 @@ const AppRoutes: React.FC = () => {
       </Route>
 
       <Route path="/gestor" exact>
-        <PainelGestor onLogout={handleLogout}></PainelGestor>
+        <PainelGestor onLogout={handleLogout} />
       </Route>
 
       <Route path="/professor" exact>
-        <PainelProfessor onLogout={handleLogout}></PainelProfessor>
+        <PainelProfessor onLogout={handleLogout} />
       </Route>
 
       <Route path="/aluno" exact>
-        <PainelAluno onLogout={handleLogout}></PainelAluno>
+        <PainelAluno onLogout={handleLogout} />
+      </Route>
+
+      <Route path="/minhas-turmas" exact>
+        <MinhasTurmas onLogout={handleLogout} />
+      </Route>
+
+      <Route path="/turma/:id" exact>
+        <TurmaDetalhes />
       </Route>
 
     </IonRouterOutlet>

@@ -32,35 +32,37 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     console.log(`Tentando com login: ${username} e ${password}`);
     
-    try{
-      const response = await fetch('http:localhost:8080/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          "login": username,
-          "password": password
-        }),
-      });
+    // try{
+    //   const response = await fetch('http:localhost:8080/auth/login', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json'
+    //     },
+    //     body: JSON.stringify({
+    //       "login": username,
+    //       "password": password
+    //     }),
+    //   });
 
-      if (!response.ok){
-        throw new Error(`Erro HTTP: ${response.status}`);
-      }
+    //   if (!response.ok){
+    //     throw new Error(`Erro HTTP: ${response.status}`);
+    //   }
 
-      const data = await response.json();
+    //   const data = await response.json();
       
-      if (!data.token || !data.role){
-        throw new Error('Resposta inválida do servidor.');
-      }
+    //   if (!data.token || !data.role){
+    //     throw new Error('Resposta inválida do servidor.');
+    //   }
 
-      onLoginSuccess(data.token, data.role)
+    //   onLoginSuccess(data.token, data.role)
 
-    }catch (err: any){
-      setError(err.message || 'Erro inesperado');
-    }finally{
-      setIsLoading(false);
-    }
+    // }catch (err: any){
+    //   setError(err.message || 'Erro inesperado');
+    // }finally{
+    //   setIsLoading(false);
+    // }
+    onLoginSuccess("abc","PROFESSOR");
+    setIsLoading(false);
   };
 
   return (
