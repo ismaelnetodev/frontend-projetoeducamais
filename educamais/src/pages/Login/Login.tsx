@@ -72,11 +72,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <IonCard>
           <IonCardContent>
             <div className="ion-text-center ion-margin-bottom">
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRs7jp8So34X9gzuuG1uVySZdWWZtj3Rbq7dQ&s"
-                alt=""
-                width={100}
-              />
+              
               <IonText>
                 <h1>Seja Bem-Vindo!</h1>
               </IonText>

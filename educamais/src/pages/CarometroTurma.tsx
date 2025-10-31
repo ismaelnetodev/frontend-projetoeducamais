@@ -471,3 +471,4 @@ const CarometroAluno: React.FC = () => {
 };
 
 export default CarometroAluno;
+

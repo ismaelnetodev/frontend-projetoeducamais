@@ -4,3 +4,7 @@ http://ionicframework.com/docs/theming/ */
 :root{
 
 }
+
+ion-header > ion-toolbar {
+  --padding-top: env(safe-area-inset-top);
+}
