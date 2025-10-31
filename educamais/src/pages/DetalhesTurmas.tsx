@@ -13,17 +13,29 @@ import {
   IonLabel,
   IonSkeletonText
 } from '@ionic/react';
-import { arrowBackOutline, peopleOutline } from 'ionicons/icons';
+import { arrowBackOutline, arrowForward, peopleOutline } from 'ionicons/icons';
 import { useParams, useHistory } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import api from '../services/api';
 
 interface TurmaDetalhesParams {
   id: string;
 }
 
 interface Aluno {
+  id: string;
+  nome: string,
+  login: string,
+  matricula: string,
+  turmaNome: string;
+}
+
+interface TurmaInfo {
   id: number;
   nome: string;
+  anoLetivo: number,
+  nomesProfessores: [],
+  numeroDeAlunos: number;
 }
 
 const TurmaDetalhes: React.FC = () => {
@@ -32,33 +44,42 @@ const TurmaDetalhes: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [turmaNome, setTurmaNome] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+
+    if (!id){
+      history.goBack();
+      return;
+    }
+
     const fetchTurma = async () => {
       try {
         setLoading(true);
+        setError(null);
 
-        // Exemplo real:
-        // const response = await fetch(`https://seu-backend.com/professores/turma/${id}`);
-        // const data = await response.json();
+        const turmaPromise = api.get<TurmaInfo>(`/turmas/${id}`);
+        const alunosPromise = api.get<Aluno[]>(`/turmas/${id}/alunos`);
 
-        // Mock:
-        setTimeout(() => {
-          setTurmaNome('1º Ano A - Matutino');
-          setAlunos([
-            { id: 1, nome: 'Ana Beatriz' },
-            { id: 2, nome: 'Lucas Andrade' },
-            { id: 3, nome: 'Marina Costa' },
-          ]);
-          setLoading(false);
-        }, 1500);
-      } catch (err) {
+        const [turmaResponse, alunosResponse] = await Promise.all([
+          turmaPromise,
+          alunosPromise
+        ]);
+
+        setTurmaNome(turmaResponse.data.nome);
+        setAlunos(alunosResponse.data);
+      
+      } catch (err: any){
+        console.error("Erro ao buscar detalhes da turma:", err);
+        setError(err.message);
+        history.goBack();
+      }finally {
         setLoading(false);
       }
     };
 
     fetchTurma();
-  }, [id]);
+  }, [id, history]);
 
   return (
     <IonPage>
@@ -96,7 +117,7 @@ const TurmaDetalhes: React.FC = () => {
 
             <IonList inset>
               {alunos.map((aluno) => (
-                <IonItem key={aluno.id}>
+                <IonItem key={aluno.id} button={true} onClick={() => history.push(`/turma/${id}/aluno/${aluno.id}`)} detail={true} detailIcon={arrowForward}>
                   <IonIcon icon={peopleOutline} slot="start" color="primary" />
                   <IonLabel>{aluno.nome}</IonLabel>
                 </IonItem>
@@ -110,4 +131,3 @@ const TurmaDetalhes: React.FC = () => {
 };
 
 export default TurmaDetalhes;
-

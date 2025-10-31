@@ -16,10 +16,14 @@ import {
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { peopleOutline, chevronForwardOutline, logOutOutline, schoolOutline } from 'ionicons/icons';
+import api from '../services/api';
 
 interface Turma {
   id: number;
   nome: string;
+  anoLetivo: number,
+  nomesProfessores: [],
+  numeroDeAlunos: number
 }
 
 interface MinhasTurmasProps {
@@ -38,27 +42,20 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
         setLoading(true);
         setError(null);
 
-        // Exemplo de chamada real:
-        // const response = await fetch('https://seu-backend.com/professores/minhas-turmas', {
-        //   headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` },
-        // });
-        // if (!response.ok) throw new Error('Erro ao carregar turmas');
-        // const data = await response.json();
+        const response = await api.get('/professores/minhas-turmas');
+        setTurmas(response.data);
 
-        // Mock temporário
-        setTimeout(() => {
-          const data: Turma[] = [
-            { id: 1, nome: '1º Ano A - Matutino' },
-            { id: 2, nome: '3º Ano B - Vespertino' },
-            { id: 3, nome: '2º Ano C - Noturno' },
-          ];
-          setTurmas(data);
-          setLoading(false);
-        }, 1500);
       } catch (err: any) {
-        setError(err.message);
+        if (err.response){
+          setError('Não foi possivel carregar as turmas.');
+        } else if (err.request){
+          setError('Erro de conexão. Verifique a internet.');
+        } else {
+          setError('Erro inesperado');
+        }
+      } finally {
         setLoading(false);
-      }
+      };
     };
 
     fetchTurmas();
@@ -84,7 +81,7 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
         </IonText>
 
         <IonText color="medium">
-          <p>Bem-vindo, Professor Tarcísio!</p>
+          <p>Bem-vindo, Professor!</p>
         </IonText>
 
         {/* Estado de carregamento */}

@@ -13,6 +13,7 @@ import {
 } from '@ionic/react';
 import React, { useState } from 'react';
 import './Login.css';
+import api from '../../services/api';
 import { logInOutline } from 'ionicons/icons';
 
 interface LoginProps {
@@ -30,39 +31,35 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setIsLoading(true);
     setError(null);
 
-    console.log(`Tentando com login: ${username} e ${password}`);
+    console.log(`Tentando com login: ${username} e senha: ${password}`);
     
-    // try{
-    //   const response = await fetch('http:localhost:8080/auth/login', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json'
-    //     },
-    //     body: JSON.stringify({
-    //       "login": username,
-    //       "password": password
-    //     }),
-    //   });
+    try{
+      const response = await api.post('/auth/login', {
+        login: username,
+        password: password
+      });
 
-    //   if (!response.ok){
-    //     throw new Error(`Erro HTTP: ${response.status}`);
-    //   }
-
-    //   const data = await response.json();
+      const data = response.data;
       
-    //   if (!data.token || !data.role){
-    //     throw new Error('Resposta inválida do servidor.');
-    //   }
+      if (!data.token || !data.role){
+        throw new Error('Resposta inválida do servidor.');
+      }
 
-    //   onLoginSuccess(data.token, data.role)
+      onLoginSuccess(data.token, data.role)
 
-    // }catch (err: any){
-    //   setError(err.message || 'Erro inesperado');
-    // }finally{
-    //   setIsLoading(false);
-    // }
-    onLoginSuccess("abc","PROFESSOR");
-    setIsLoading(false);
+    }catch (err: any){
+      if (err.response){
+        console.error('Erro de resposta:', err.response.data);
+        setError(err.response.data.message || 'Login ou senha inválidos.');
+      } else if (err.request){
+        setError('Erro ao conectar ao servidor. :O');
+      } else {
+        setError(err.message || 'Erro inesperado.');
+      }
+    }finally{
+      setIsLoading(false);
+    }
+
   };
 
   return (
@@ -100,7 +97,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 autofocus
                 required
                 value={username}
-                onIonChange={e => setUsername(e.detail.value!)}
+                onIonInput={e => setUsername(e.detail.value!)}
               />
 
               <IonInput
@@ -113,7 +110,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 shape="round"
                 required
                 value={password}
-                onIonInput={e => setPassword(e.detail.value!)}
+                onIonInput={e => {console.log('Senha digitada', e.detail.value); setPassword(e.detail.value!)}}
               >
                 <IonInputPasswordToggle slot="end"></IonInputPasswordToggle>
               </IonInput>
