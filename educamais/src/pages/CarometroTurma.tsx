@@ -47,14 +47,57 @@ interface Aluno {
   fotoUrl?: string;
 }
 
+interface Avaliacao {
+  id: number;
+  dataAvaliacao: string;
+  professorNome: string;
+  assiduidade: number;
+  participacao: number;
+  responsabilidade: number;
+  sociabilidade: number;
+  observacao: string;
+}
+
+interface Medias{
+  assiduidade: number;
+  participacao: number;
+  responsabilidade: number;
+  sociabilidade: number;
+}
 
 // Função para gerar emoji de média
 const gerarEmoji = (valor: number) => {
-  if (valor <= 1) return '😠';
-  if (valor <= 2) return '😟';
-  if (valor <= 3) return '😐';
-  if (valor <= 4) return '😊';
+  const notaNormalizada = valor * 2;
+  if (notaNormalizada <= 1) return '😠';
+  if (notaNormalizada <= 2) return '😟';
+  if (notaNormalizada <= 3) return '😐';
+  if (notaNormalizada <= 4) return '😊';
   return '😄';
+};
+
+const calcularMedias = (avaliacoes: Avaliacao[]): Medias => {
+  if (avaliacoes.length === 0) return { assiduidade: 0, participacao: 0, responsabilidade: 0, sociabilidade: 0 };
+
+  const soma = avaliacoes.reduce((acc, av) => {
+    acc.assiduidade += av.assiduidade;
+    acc.participacao += av.participacao;
+    acc.responsabilidade += av.responsabilidade;
+    acc.sociabilidade += av.sociabilidade;
+    return acc;
+  }, { assiduidade: 0, participacao: 0, responsabilidade: 0, sociabilidade: 0 });
+
+  return {
+    assiduidade: soma.assiduidade / avaliacoes.length,
+    participacao: soma.participacao / avaliacoes.length,
+    responsabilidade: soma.responsabilidade / avaliacoes.length,
+    sociabilidade: soma.sociabilidade / avaliacoes.length
+  };
+
+};
+
+const formatarData = (dataString: string) => {
+  const data = new Date(dataString);
+  return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})
 };
 
 const CarometroAluno: React.FC = () => {
@@ -63,6 +106,9 @@ const CarometroAluno: React.FC = () => {
   const [aluno, setAluno] = useState<Aluno | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [historico, setHistorico] = useState<Avaliacao[]>([]);
+  const [medias, setMedias] = useState<Medias>({ assiduidade: 0, participacao: 0, responsabilidade: 0, sociabilidade: 0 });
 
   const [modalAberto, setModalAberto] = useState(false);
 
@@ -84,14 +130,22 @@ const CarometroAluno: React.FC = () => {
       setError(null);
 
       try{
-        const response = await api.get<Aluno>(`/alunos/${alunoId}`);
-        const alunoData = response.data;
+
+        const [alunoResponse, historicoResponse] = await Promise.all([
+          api.get<Aluno>(`/alunos/${alunoId}`),
+          api.get<Avaliacao[]>(`/alunos/${alunoId}/avaliacoes`)
+        ]);
+
+        const alunoData = alunoResponse.data;
+        const historicoData = historicoResponse.data;
 
         if(!alunoData.fotoUrl){
-          alunoData.fotoUrl = `https://i.pravatar.cc/400?u=${turmaId}`
+          alunoData.fotoUrl = ``
         }
 
         setAluno(alunoData);
+        setHistorico(historicoData);
+        setMedias(calcularMedias(historicoData));
       } catch (err: any) {
         console.error("Erro ao buscar dados do aluno:", err);
         setError("Não foi possível carregar os dados do aluno.");
@@ -120,7 +174,9 @@ const CarometroAluno: React.FC = () => {
     };
 
     try{
-      await api.post('/avaliacoes', avaliacaoBody);
+
+      const response = await api.post<Avaliacao>('/avaliacoes', avaliacaoBody);
+      const novaAvaliacao = response.data;
 
       setIsSubmitting(false);
       setModalAberto(false);
@@ -129,6 +185,10 @@ const CarometroAluno: React.FC = () => {
         duration: 2000,
         color: 'success'
       });
+
+      const novoHistorico = [novaAvaliacao, ...historico];
+      setHistorico(novoHistorico);
+      setMedias(calcularMedias(novoHistorico));
 
     } catch (err: any){
       console.error("Erro ao salvar avaliação:", err);
@@ -147,12 +207,6 @@ const CarometroAluno: React.FC = () => {
     setModalAberto(true);
   };
 
-  const medias = {
-    assiduidade: 4,
-    participacao: 3,
-    responsabilidade: 5,
-    sociabilidade: 4
-  };
 
   if (loading) {
     return (
