@@ -1,25 +1,24 @@
 import { IonApp, setupIonicReact, IonRouterOutlet } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { Route } from 'react-router-dom';
+import { Redirect, Route, Switch } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useIonRouter } from '@ionic/react';
 
 import Login from './pages/Login/Login';
-import MainTabs from './MainTabs';
-
 import PainelGestor from './pages/PainelGestor';
-import PainelProfessor from './pages/PainelProfessor';
 import PainelAluno from './pages/PainelAluno';
+import MinhasTurmas from './pages/PainelProfessor';
+import TurmaDetalhes from './pages/DetalhesTurmas';
+import CarometroAluno from './pages/CarometroTurma';
 
-/* Ionic Core e CSS */
+import { setAuthToken } from './services/api';
+
+/* Ionic CSS */
 import '@ionic/react/css/core.css';
 import '@ionic/react/css/normalize.css';
 import '@ionic/react/css/structure.css';
 import '@ionic/react/css/typography.css';
 import '@ionic/react/css/padding.css';
-import '@ionic/react/css/float-elements.css';
-import '@ionic/react/css/text-alignment.css';
-import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 import '@ionic/react/css/palettes/dark.system.css';
@@ -27,104 +26,110 @@ import './theme/variables.css';
 
 setupIonicReact();
 
+const RedirectToRole: React.FC<{ role: string | null }> = ({ role }) => {
+  switch (role){
+    case 'GESTOR':
+      return <Redirect to="/gestor"/>;
+    case 'PROFESSOR':
+      return <Redirect to="/minhas-turmas"/>;
+    case 'ALUNO':
+      return <Redirect to="/aluno"/>;
+    default:
+      return <Redirect to="/login" />;
+  }
+};
+
 const AppRoutes: React.FC = () => {
+
   const router = useIonRouter();
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [role, setRole] = useState<string | null>(null);
 
-  // Carrega o token inicial
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     const storedRole = localStorage.getItem('userRole');
-    setIsAuthenticated(!!token);
-    if (storedRole) setRole(storedRole);
+    
+    if (token && storedRole){
+      setAuthToken(token);
+      setIsAuthenticated(true);
+      setRole(storedRole);
+    } else {
+      setIsAuthenticated(false);
+    }
   }, []);
 
-  // Reage à mudança no estado de autenticação
-  useEffect(() => {
-    if (isAuthenticated === null) return;
-
-    // Delay curto para o Ionic sincronizar o estado da rota antes de redirecionar
-    const delayRedirect = setTimeout(() => {
-      if (isAuthenticated && router.routeInfo.pathname === '/login') {
-        switch (role){
-          case 'GESTOR':
-            router.push('/gestor', 'root');
-            break;
-          case 'ALUNO':
-            router.push('/aluno', 'root');
-            break;
-          case 'PROFESSOR':
-            router.push('/professor', 'root');
-            break;
-          default:
-            router.push('/', 'root');
-        }
-      } else if (!isAuthenticated && router.routeInfo.pathname !== '/login') {
-        router.push('/login', 'root');
-      }
-    }, 100);
-
-    return () => clearTimeout(delayRedirect);
-  }, [isAuthenticated, role, router]);
-
   const handleLoginSuccess = (token: string, role: string) => {
-    console.log("LOGIN SUCEDIDO");
-    // salva o token e atualiza o estado
-    localStorage.setItem('authToken', 'tokensecreto');
+    localStorage.setItem('authToken', token);
     localStorage.setItem('userRole', role);
+    setAuthToken(token);
     setIsAuthenticated(true);
     setRole(role);
-    
-    switch (role) {
+    switch (role){
       case 'GESTOR':
         router.push('/gestor', 'root');
         break;
       case 'PROFESSOR':
-        router.push('/professor', 'root');
+        router.push('/minhas-turmas', 'root');
         break;
       case 'ALUNO':
         router.push('/aluno', 'root');
         break;
       default:
         router.push('/', 'root');
-    }    
-
+    }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
+    setAuthToken(null);
     setIsAuthenticated(false);
     setRole(null);
     router.push('/login', 'root');
   };
 
-  if (isAuthenticated === null) return null;
-
   return (
     <IonRouterOutlet>
+      <Switch>
+        {/* Rota 1: O Login */}
+        <Route path="/login" exact>
+          {/* Se JÁ estiver logado, redireciona para a "home". */}
+          {isAuthenticated ? <Redirect to="/" /> : <Login onLoginSuccess={handleLoginSuccess} />}
+        </Route>
 
-      <Route path="/login" exact>
-        <Login onLoginSuccess={handleLoginSuccess} />
-      </Route>
+        {/* Rota 2: A "Home" (/) */}
+        {/* Esta rota é o "distribuidor". */}
+        <Route path="/" exact>
+          {/* Se NÃO estiver logado, vai para /login */}
+          {!isAuthenticated ? <Redirect to="/login" /> : <RedirectToRole role={role} />}
+        </Route>
 
-      <Route path="/" exact>
-        <MainTabs onLogout={handleLogout} />
-      </Route>
+        {/* Rota 3: Rotas Protegidas */}
+        <Route path="/gestor" exact>
+          {isAuthenticated ? <PainelGestor onLogout={handleLogout} /> : <Redirect to="/login" />}
+        </Route>
+        
+        <Route path="/minhas-turmas" exact>
+          {isAuthenticated ? <MinhasTurmas onLogout={handleLogout} /> : <Redirect to="/login" />}
+        </Route>
+        
+        <Route path="/aluno" exact>
+          {isAuthenticated ? <PainelAluno onLogout={handleLogout} /> : <Redirect to="/login" />}
+        </Route>
+        
+        <Route path="/turma/:id" exact>
+          {isAuthenticated ? <TurmaDetalhes /> : <Redirect to="/login" />}
+        </Route>
 
-      <Route path="/gestor" exact>
-        <PainelGestor onLogout={handleLogout}></PainelGestor>
-      </Route>
+        <Route path="/turma/:turmaId/aluno/:alunoId" exact>
+          {isAuthenticated ? <CarometroAluno /> : <Redirect to="/login" />}
+        </Route>
+        
+        {/* Rota "Default": Se não encontrar nada, volta para a home */}
+        <Redirect to="/" />
 
-      <Route path="/professor" exact>
-        <PainelProfessor onLogout={handleLogout}></PainelProfessor>
-      </Route>
-
-      <Route path="/aluno" exact>
-        <PainelAluno onLogout={handleLogout}></PainelAluno>
-      </Route>
-
+      </Switch>
     </IonRouterOutlet>
   );
 };
