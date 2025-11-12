@@ -1,49 +1,32 @@
-import { 
-  IonTabs, 
-  IonRouterOutlet, 
-  IonTabBar, 
-  IonTabButton, 
-  IonIcon, 
-  IonLabel,
+import {
   IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
   IonContent,
-  IonButton
+  IonButton,
+  IonFooter
 } from '@ionic/react';
-import { Route, Redirect } from 'react-router-dom';
-import { home } from 'ionicons/icons';
-
-const Tab1: React.FC = () => (
-  <IonPage>
-    <IonHeader>
-      <IonToolbar>
-        <IonTitle>Tab 1</IonTitle>
-      </IonToolbar>
-    </IonHeader>
-    <IonContent className="ion-padding">
-      <h1>Conteúdo Protegido!</h1>
-      <p>Conseguiste fazer o login.</p>
-    </IonContent>
-  </IonPage>
-);
 
 const PainelGestor: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   return (
     <IonPage>
       <IonHeader>
-        <IonToolbar>
-          <IonTitle>Main</IonTitle>
+        <IonToolbar color="primary">
+          <IonTitle>Painel do Gestor</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent>
-        Aqui é o painel do Gestor
-        
-    </IonContent>
-        <IonButton slot="end" onClick={onLogout}>
-            Logout
+
+      <IonContent className="ion-padding">
+        <h2>Bem-vindo ao Painel do Gestor!</h2>
+        <p>Aqui você pode gerenciar turmas, professores e alunos.</p>
+      </IonContent>
+
+      <IonFooter className="ion-padding">
+        <IonButton expand="block" color="danger" onClick={onLogout}>
+          Sair
         </IonButton>
+      </IonFooter>
     </IonPage>
   );
 };
