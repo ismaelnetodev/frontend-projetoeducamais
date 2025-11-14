@@ -5,10 +5,17 @@ import {
   IonTitle,
   IonContent,
   IonButton,
-  IonFooter
+  IonFooter,
+  IonLabel,
+  IonList,
+  IonItem
 } from '@ionic/react';
+import { useHistory } from 'react-router-dom';
 
 const PainelGestor: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
+
+  const history = useHistory();
+
   return (
     <IonPage>
       <IonHeader>
@@ -17,10 +24,27 @@ const PainelGestor: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent className="ion-padding">
-        <h2>Bem-vindo ao Painel do Gestor!</h2>
-        <p>Aqui você pode gerenciar turmas, professores e alunos.</p>
-      </IonContent>
+     <IonContent className="ion-padding">
+
+      <IonList>
+        <IonItem button routerLink="/gestao/alunos">
+          <IonLabel>Gerenciar Alunos</IonLabel>
+        </IonItem>
+
+        <IonItem button routerLink="/gestao/professores">
+          <IonLabel>Gerenciar Professores</IonLabel>
+        </IonItem>
+
+        <IonItem button routerLink="/gestao/gestores">
+          <IonLabel>Gerenciar Gestores</IonLabel>
+        </IonItem>
+
+        <IonItem button routerLink="/gestao/turmas">
+          <IonLabel>Gerenciar Turmas</IonLabel>
+        </IonItem>
+      </IonList>
+
+    </IonContent>
 
       <IonFooter className="ion-padding">
         <IonButton expand="block" color="danger" onClick={onLogout}>

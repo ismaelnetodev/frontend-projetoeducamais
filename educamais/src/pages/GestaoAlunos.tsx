@@ -5,92 +5,158 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonButton,
   IonSearchbar,
-  IonList,
-  IonItem,
-  IonLabel,
-  IonItemSliding,
-  IonItemOptions,
-  IonItemOption,
-  IonFab,
-  IonFabButton,
-  IonIcon,
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonCard,
+  IonCardContent,
+  IonImg,
+  IonText,
   IonAlert,
-  IonSkeletonText,
-  IonToast
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  IonRefresher,
+  IonRefresherContent,
+  RefresherEventDetail,
+  IonIcon,
+  IonFab,
+  IonFabButton
 } from '@ionic/react';
-import { add, trash } from 'ionicons/icons';
+import { add, trash, pencil } from 'ionicons/icons';
 import api from '../services/api';
-import AlunoFormModal from './AlunoFormModal';
+import AlunoFormModal from '../components/AlunoFormModal';
 
 interface Aluno {
   id: number;
   nome: string;
   matricula: string;
-  turmaNome?: string;
+  fotoUrl?: string;
+  turmaId?: number;
 }
+
+const PAGE_SIZE = 20;
 
 const GestaoAlunos: React.FC = () => {
   const [alunos, setAlunos] = useState<Aluno[]>([]);
-  const [searchText, setSearchText] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alunoToDelete, setAlunoToDelete] = useState<number | null>(null);
-  const [showToast, setShowToast] = useState(false);
-  const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateMode, setIsCreateMode] = useState(true);
+  const [editAlunoId, setEditAlunoId] = useState<number | null>(null);
 
-  const fetchAlunos = async () => {
-    setLoading(true);
+  const [alertDelete, setAlertDelete] = useState<{open: boolean; id: number | null}>({
+    open: false,
+    id: null
+  });
+
+  // Chamada para buscar alunos paginados e com busca
+  const fetchAlunos = async (reset = false) => {
     try {
-      const response = await api.get('/alunos');
-      setAlunos(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar alunos:', error);
+      const currentPage = reset ? 0 : page;
+      const res = await api.get('/alunos', {
+        params: {
+          page: currentPage,
+          size: PAGE_SIZE,
+          search: searchTerm.trim() || undefined
+        }
+      });
+
+      const content = res.data.content || [];
+      const last = res.data.last;
+
+      if (reset) {
+        setAlunos(content);
+      } else {
+        setAlunos(prev => [...prev, ...content]);
+      }
+
+      setHasMore(!last);
+      if (!reset) setPage(prev => prev + 1);
+    } catch (err) {
+      console.error('Erro ao buscar alunos:', err);
     } finally {
-      setLoading(false);
+      setLoadingInitial(false);
     }
   };
 
+  // Load inicial
   useEffect(() => {
-    fetchAlunos();
+    fetchAlunos(true);
+    // eslint-disable-next-line
   }, []);
 
-  const handleAdd = () => {
+  // Busca
+  const handleSearch = async (term: string) => {
+    setSearchTerm(term);
+    setPage(0);
+    await fetchAlunos(true);
+  };
+
+  // Scroll infinito
+  const loadMore = async (ev: any) => {
+    if (!hasMore) {
+      ev.target.complete();
+      return;
+    }
+    await fetchAlunos(false);
+    ev.target.complete();
+  };
+
+  // Pull to refresh
+  const handleRefresh = async (event: CustomEvent<RefresherEventDetail>) =>
+  {
+    setPage(0);
+    await fetchAlunos(true);
+    event.detail.complete();
+  };
+
+  // Abrir modal CRIAR
+  const openCreateModal = () => {
     setIsCreateMode(true);
-    setSelectedAlunoId(null);
+    setEditAlunoId(null);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (id: number) => {
-    setSelectedAlunoId(id);
+  // Abrir modal EDITAR
+  const openEditModal = (id: number) => {
     setIsCreateMode(false);
+    setEditAlunoId(id);
     setIsModalOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    setAlunoToDelete(id);
-    setShowAlert(true);
+  // Salvar → atualizar localmente sem novo GET
+  const handleSaved = (updatedAluno?: Aluno) => {
+    if (!updatedAluno) {
+      // Caso o modal não envie nada, fazemos um refresh completo
+      fetchAlunos(true);
+      return;
+    }
+
+    setAlunos(prev => {
+      // Se é create, adiciona no topo
+      if (!prev.some(a => a.id === updatedAluno.id)) {
+        return [updatedAluno, ...prev];
+      }
+
+      // Se é edit, substitui localmente
+      return prev.map(a => (a.id === updatedAluno.id ? updatedAluno : a));
+    });
   };
 
-  const confirmDelete = async () => {
-    if (alunoToDelete) {
-      try {
-        await api.delete(`/alunos/${alunoToDelete}`);
-        setShowToast(true);
-        fetchAlunos();
-      } catch (error) {
-        console.error('Erro ao deletar aluno:', error);
-      } finally {
-        setShowAlert(false);
-      }
+  // Remover aluno
+  const deleteAluno = async (id: number) => {
+    try {
+      await api.delete(`/alunos/${id}`);
+      setAlunos(prev => prev.filter(a => a.id !== id));
+    } catch (err) {
+      console.error('Erro ao deletar aluno:', err);
     }
   };
-
-  const filteredAlunos = alunos.filter(a =>
-    a.nome.toLowerCase().includes(searchText.toLowerCase())
-  );
 
   return (
     <IonPage>
@@ -100,74 +166,103 @@ const GestaoAlunos: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      <IonContent>
+      <IonContent fullscreen>
+
+        {/* Busca */}
         <IonSearchbar
-          placeholder="Pesquisar aluno..."
-          value={searchText}
-          onIonInput={e => setSearchText(e.detail.value!)}
+          value={searchTerm}
+          onIonInput={e => handleSearch(e.detail.value!)}
+          debounce={400}
+          placeholder="Buscar aluno por nome ou matrícula..."
         />
 
-        {loading ? (
-          <IonList>
-            {[...Array(5)].map((_, i) => (
-              <IonItem key={i}>
-                <IonLabel>
-                  <h2><IonSkeletonText animated style={{ width: '60%' }} /></h2>
-                  <p><IonSkeletonText animated style={{ width: '40%' }} /></p>
-                </IonLabel>
-              </IonItem>
-            ))}
-          </IonList>
-        ) : (
-          <IonList>
-            {filteredAlunos.map(aluno => (
-              <IonItemSliding key={aluno.id}>
-                <IonItem button onClick={() => handleEdit(aluno.id)}>
-                  <IonLabel>
-                    <h2>{aluno.nome}</h2>
-                    <p>{aluno.turmaNome || `Matrícula: ${aluno.matricula}`}</p>
-                  </IonLabel>
-                </IonItem>
-                <IonItemOptions side="end">
-                  <IonItemOption color="danger" onClick={() => handleDelete(aluno.id)}>
-                    <IonIcon icon={trash} />
-                  </IonItemOption>
-                </IonItemOptions>
-              </IonItemSliding>
-            ))}
-          </IonList>
-        )}
+        {/* Pull to Refresh */}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
 
-        <IonFab slot="fixed" vertical="bottom" horizontal="end">
-          <IonFabButton onClick={handleAdd}>
+        {/* Lista de alunos */}
+        <IonGrid>
+          <IonRow>
+            {alunos.map(a => (
+              <IonCol size="12" sizeMd="4" sizeLg="3" key={a.id}>
+                <IonCard>
+                  <IonImg
+                    src={
+                      a.fotoUrl ||
+                      'https://upload.wikimedia.org/wikipedia/commons/a/ac/Default_pfp.jpg'
+                    }
+                    style={{ height: 160, objectFit: 'cover' }}
+                  />
+                  <IonCardContent>
+                    <IonText>
+                      <h2 style={{ marginBottom: 8 }}>{a.nome}</h2>
+                    </IonText>
+
+                    <IonText color="medium">
+                      <p>Matrícula: {a.matricula}</p>
+                    </IonText>
+
+                    <div style={{ display: 'flex', marginTop: 12, justifyContent: 'space-between' }}>
+                      <IonButton
+                        size="small"
+                        color="warning"
+                        onClick={() => openEditModal(a.id)}
+                      >
+                        <IonIcon icon={pencil} slot="start" />
+                        Editar
+                      </IonButton>
+
+                      <IonButton
+                        size="small"
+                        color="danger"
+                        onClick={() => setAlertDelete({ open: true, id: a.id })}
+                      >
+                        <IonIcon icon={trash} />
+                      </IonButton>
+                    </div>
+                  </IonCardContent>
+                </IonCard>
+              </IonCol>
+            ))}
+          </IonRow>
+        </IonGrid>
+
+        {/* Scroll infinito */}
+        <IonInfiniteScroll onIonInfinite={loadMore} threshold="100px" disabled={!hasMore}>
+          <IonInfiniteScrollContent loadingText="Carregando..." />
+        </IonInfiniteScroll>
+
+        {/* Botão flutuante de adicionar */}
+        <IonFab vertical="bottom" horizontal="end" slot="fixed">
+          <IonFabButton color="success" onClick={openCreateModal}>
             <IonIcon icon={add} />
           </IonFabButton>
         </IonFab>
 
+        {/* Modal de criar/editar */}
         <AlunoFormModal
           isOpen={isModalOpen}
           onDidDismiss={() => setIsModalOpen(false)}
-          alunoId={selectedAlunoId}
+          alunoId={editAlunoId}
           isCreateMode={isCreateMode}
-          onSaved={fetchAlunos}
+          onSaved={handleSaved}
         />
 
+        {/* Alerta de remoção */}
         <IonAlert
-          isOpen={showAlert}
-          header="Confirmar Exclusão"
-          message="Tem a certeza? Esta ação não pode ser desfeita."
+          isOpen={alertDelete.open}
+          header="Confirmar remoção"
+          message="Tem certeza que deseja excluir este aluno?"
           buttons={[
-            { text: 'Cancelar', role: 'cancel', handler: () => setShowAlert(false) },
-            { text: 'Deletar', handler: confirmDelete }
+            { text: 'Cancelar', role: 'cancel' },
+            {
+              text: 'Remover',
+              role: 'destructive',
+              handler: () => deleteAluno(alertDelete.id!)
+            }
           ]}
-        />
-
-        <IonToast
-          isOpen={showToast}
-          message="Aluno removido com sucesso"
-          duration={2000}
-          color="success"
-          onDidDismiss={() => setShowToast(false)}
+          onDidDismiss={() => setAlertDelete({ open: false, id: null })}
         />
       </IonContent>
     </IonPage>

@@ -10,6 +10,7 @@ import PainelAluno from './pages/PainelAluno';
 import MinhasTurmas from './pages/PainelProfessor';
 import TurmaDetalhes from './pages/DetalhesTurmas';
 import CarometroAluno from './pages/CarometroTurma';
+import GestaoAlunos from './pages/GestaoAlunos';
 
 import { setAuthToken } from './services/api';
 
@@ -108,6 +109,10 @@ const AppRoutes: React.FC = () => {
         {/* Rota 3: Rotas Protegidas */}
         <Route path="/gestor" exact>
           {isAuthenticated ? <PainelGestor onLogout={handleLogout} /> : <Redirect to="/login" />}
+        </Route>
+
+        <Route path="/gestao/alunos" exact>
+          {isAuthenticated ? <GestaoAlunos/> : <Redirect to="/login" />}
         </Route>
         
         <Route path="/minhas-turmas" exact>
