@@ -21,22 +21,16 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonAvatar,
-  IonIcon,
-  IonFab,
-  IonFabButton,
-  IonButtons,
-  IonButton
+  IonIcon
 } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { 
   peopleOutline, 
-  logOutOutline, 
   schoolOutline,
   calendarOutline,
   personOutline,
-  searchOutline,
-  addOutline
+  searchOutline
 } from 'ionicons/icons';
 import api from '../services/api';
 
@@ -48,13 +42,13 @@ interface Turma {
   numeroDeAlunos: number;
 }
 
-interface MinhasTurmasProps {
+interface MinhasTurmasTabProps {
   onLogout: () => void;
 }
 
 const PAGE_SIZE = 12;
 
-const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
+const MinhasTurmasTab: React.FC<MinhasTurmasTabProps> = ({ onLogout }) => {
   const [turmas, setTurmas] = useState<Turma[]>([]);
   const [filteredTurmas, setFilteredTurmas] = useState<Turma[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -142,11 +136,6 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
       <IonHeader translucent={true}>
         <IonToolbar color="primary">
           <IonTitle>Minhas Turmas</IonTitle>
-          <IonButtons slot="end">
-            <IonButton onClick={onLogout} color="light">
-              <IonIcon icon={logOutOutline} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
         </IonToolbar>
       </IonHeader>
 
@@ -179,6 +168,7 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
             </p>
           </IonText>
 
+          {/* Barra de pesquisa */}
           <IonSearchbar
             value={searchTerm}
             onIonInput={e => handleSearch(e.detail.value!)}
@@ -193,6 +183,7 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
             }}
           />
 
+          {/* Estado de carregamento */}
           {loading && (
             <IonGrid>
               <IonRow>
@@ -213,6 +204,7 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
             </IonGrid>
           )}
 
+          {/* Estado de erro */}
           {error && !loading && (
             <div style={{ 
               textAlign: 'center', 
@@ -231,15 +223,10 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
                 <h2 style={{ fontWeight: 600 }}>Erro ao carregar turmas</h2>
                 <p>{error}</p>
               </IonText>
-              <IonButton 
-                onClick={() => fetchTurmas(true)} 
-                style={{ marginTop: '1rem' }}
-              >
-                Tentar novamente
-              </IonButton>
             </div>
           )}
 
+          {/* Estado vazio */}
           {!loading && !error && filteredTurmas.length === 0 && !searchTerm && (
             <div style={{ 
               textAlign: 'center', 
@@ -257,13 +244,11 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
               <IonText color="medium">
                 <h2 style={{ fontWeight: 600 }}>Nenhuma turma encontrada</h2>
                 <p>Você ainda não possui turmas associadas.</p>
-                <p style={{ fontSize: '0.9rem' }}>
-                  Entre em contato com a gestão para verificar sua alocação.
-                </p>
               </IonText>
             </div>
           )}
 
+          {/* Resultado vazio da busca */}
           {!loading && !error && filteredTurmas.length === 0 && searchTerm && (
             <div style={{ 
               textAlign: 'center', 
@@ -285,6 +270,7 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
             </div>
           )}
 
+          {/* Grid de turmas */}
           {!loading && !error && filteredTurmas.length > 0 && (
             <IonGrid>
               <IonRow>
@@ -393,6 +379,7 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
             </IonGrid>
           )}
 
+          {/* Scroll infinito */}
           {!searchTerm && (
             <IonInfiniteScroll 
               onIonInfinite={loadMore} 
@@ -403,13 +390,6 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
             </IonInfiniteScroll>
           )}
         </div>
-
-        {/* FAB para criar simulado */}
-        <IonFab vertical="bottom" horizontal="end" slot="fixed">
-          <IonFabButton color="success" onClick={() => history.push('/criar-simulado')}>
-            <IonIcon icon={addOutline} />
-          </IonFabButton>
-        </IonFab>
 
         <style>{`
           .turma-card:hover {
@@ -422,4 +402,4 @@ const MinhasTurmas: React.FC<MinhasTurmasProps> = ({ onLogout }) => {
   );
 };
 
-export default MinhasTurmas;
+export default MinhasTurmasTab;

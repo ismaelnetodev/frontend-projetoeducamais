@@ -24,6 +24,7 @@ import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 import '@ionic/react/css/palettes/dark.system.css';
 import './theme/variables.css';
+import CriarSimulado from './pages/CriarSimulado';
 
 setupIonicReact();
 
@@ -109,6 +110,10 @@ const AppRoutes: React.FC = () => {
         {/* Rota 3: Rotas Protegidas */}
         <Route path="/gestor" exact>
           {isAuthenticated ? <PainelGestor onLogout={handleLogout} /> : <Redirect to="/login" />}
+        </Route>
+
+        <Route path="/criar-simulado" exact>
+          {isAuthenticated ? <CriarSimulado /> : <Redirect to="/login" />}
         </Route>
 
         <Route path="/gestao/alunos" exact>
