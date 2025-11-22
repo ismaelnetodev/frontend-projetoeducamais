@@ -39,7 +39,8 @@ import {
   documentTextOutline,
   calendarOutline,
   timeOutline,
-  arrowBackOutline
+  arrowBackOutline,
+  bookOutline
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import api from '../services/api';
@@ -49,6 +50,11 @@ interface Turma {
   id: number;
   nome: string;
   anoLetivo: number;
+}
+
+interface Disciplina {
+  id: number;
+  nome: string;
 }
 
 interface Questao {
@@ -64,18 +70,20 @@ const CriarSimulado: React.FC = () => {
   const history = useHistory();
   const [titulo, setTitulo] = useState('');
   const [turmaId, setTurmaId] = useState<number | null>(null);
-  const [disciplinaId, setDisciplinaId] = useState<number>(0);
+  const [disciplinaId, setDisciplinaId] = useState<number | null>(null);
   const [inicioDisponivel, setInicioDisponivel] = useState('');
   const [fimDisponivel, setFimDisponivel] = useState('');
   const [questoesSelecionadas, setQuestoesSelecionadas] = useState<number[]>([]);
 
   const [turmas, setTurmas] = useState<Turma[]>([]);
+  const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [questoesDisponiveis, setQuestoesDisponiveis] = useState<Questao[]>([]);
   const [questoesFiltradas, setQuestoesFiltradas] = useState<Questao[]>([]);
   
   const [showQuestaoModal, setShowQuestaoModal] = useState(false);
   const [showSelecionarQuestoesModal, setShowSelecionarQuestoesModal] = useState(false);
   const [searchQuestao, setSearchQuestao] = useState('');
+  const [filtroDisciplinaQuestoes, setFiltroDisciplinaQuestoes] = useState<string>('');
   
   const [loading, setLoading] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -83,6 +91,7 @@ const CriarSimulado: React.FC = () => {
 
   useEffect(() => {
     fetchTurmas();
+    fetchDisciplinas();
     fetchQuestoes();
   }, []);
 
@@ -93,6 +102,17 @@ const CriarSimulado: React.FC = () => {
       setTurmas(data);
     } catch (err) {
       console.error('Erro ao buscar turmas:', err);
+    }
+  };
+
+  const fetchDisciplinas = async () => {
+    try {
+      const response = await api.get('/disciplinas');
+      const data = response.data.content || response.data;
+      setDisciplinas(data);
+    } catch (err) {
+      console.error('Erro ao buscar disciplinas:', err);
+      setToastMsg('Erro ao carregar disciplinas');
     }
   };
 
@@ -109,10 +129,30 @@ const CriarSimulado: React.FC = () => {
 
   const handleSearchQuestao = (term: string) => {
     setSearchQuestao(term);
-    const filtered = questoesDisponiveis.filter(q =>
-      q.enunciado.toLowerCase().includes(term.toLowerCase()) ||
-      q.disciplina.toLowerCase().includes(term.toLowerCase())
-    );
+    aplicarFiltros(term, filtroDisciplinaQuestoes);
+  };
+
+  const handleFiltroDisciplina = (disciplina: string) => {
+    setFiltroDisciplinaQuestoes(disciplina);
+    aplicarFiltros(searchQuestao, disciplina);
+  };
+
+  const aplicarFiltros = (termo: string, disciplina: string) => {
+    let filtered = questoesDisponiveis;
+
+    if (termo) {
+      filtered = filtered.filter(q =>
+        q.enunciado.toLowerCase().includes(termo.toLowerCase()) ||
+        q.disciplina.toLowerCase().includes(termo.toLowerCase())
+      );
+    }
+
+    if (disciplina) {
+      filtered = filtered.filter(q =>
+        q.disciplina.toLowerCase() === disciplina.toLowerCase()
+      );
+    }
+
     setQuestoesFiltradas(filtered);
   };
 
@@ -130,6 +170,7 @@ const CriarSimulado: React.FC = () => {
 
     if (!titulo.trim()) newErrors.titulo = 'Título é obrigatório';
     if (!turmaId) newErrors.turmaId = 'Selecione uma turma';
+    if (!disciplinaId) newErrors.disciplinaId = 'Selecione uma disciplina';
     if (!inicioDisponivel) newErrors.inicioDisponivel = 'Data de início é obrigatória';
     if (!fimDisponivel) newErrors.fimDisponivel = 'Data de fim é obrigatória';
     if (questoesSelecionadas.length === 0) newErrors.questoes = 'Selecione pelo menos uma questão';
@@ -181,6 +222,9 @@ const CriarSimulado: React.FC = () => {
     setQuestoesDisponiveis(prev => [novaQuestao, ...prev]);
     setQuestoesFiltradas(prev => [novaQuestao, ...prev]);
     setQuestoesSelecionadas(prev => [...prev, novaQuestao.id]);
+    
+    // Recarrega disciplinas caso uma nova tenha sido criada
+    fetchDisciplinas();
   };
 
   const getTotalPontuacao = () => {
@@ -189,6 +233,16 @@ const CriarSimulado: React.FC = () => {
       .reduce((sum, q) => sum + q.pontuacao, 0)
       .toFixed(1);
   };
+
+  const getDisciplinaSelecionadaNome = () => {
+    const disciplina = disciplinas.find(d => d.id === disciplinaId);
+    return disciplina?.nome || '';
+  };
+
+  // Filtra questões da disciplina selecionada
+  const questoesDaDisciplina = questoesDisponiveis.filter(q => 
+    !disciplinaId || q.disciplina.toLowerCase() === getDisciplinaSelecionadaNome().toLowerCase()
+  );
 
   return (
     <IonPage>
@@ -253,6 +307,37 @@ const CriarSimulado: React.FC = () => {
                   <p style={{ marginLeft: 12, fontSize: '0.85rem' }}>{errors.turmaId}</p>
                 </IonText>
               )}
+
+              <IonItem>
+                <IonLabel position="stacked">
+                  <IonIcon icon={bookOutline} style={{ marginRight: '0.5rem' }} />
+                  Disciplina *
+                </IonLabel>
+                <IonSelect
+                  value={disciplinaId}
+                  placeholder="Selecione a disciplina"
+                  onIonChange={e => setDisciplinaId(e.detail.value)}
+                >
+                  {disciplinas.map(d => (
+                    <IonSelectOption key={d.id} value={d.id}>
+                      {d.nome}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+              </IonItem>
+              {errors.disciplinaId && (
+                <IonText color="danger">
+                  <p style={{ marginLeft: 12, fontSize: '0.85rem' }}>{errors.disciplinaId}</p>
+                </IonText>
+              )}
+
+              {disciplinas.length === 0 && (
+                <IonText color="medium">
+                  <p style={{ marginLeft: 12, fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                    Nenhuma disciplina cadastrada. Crie uma questão para adicionar disciplinas automaticamente.
+                  </p>
+                </IonText>
+              )}
             </IonList>
           </IonCardContent>
         </IonCard>
@@ -310,12 +395,21 @@ const CriarSimulado: React.FC = () => {
             </div>
           </IonCardHeader>
           <IonCardContent>
+            {disciplinaId && questoesDaDisciplina.length > 0 && (
+              <IonText color="medium">
+                <p style={{ fontSize: '0.85rem', marginBottom: '1rem' }}>
+                  {questoesDaDisciplina.length} questão(ões) disponível(is) em {getDisciplinaSelecionadaNome()}
+                </p>
+              </IonText>
+            )}
+
             <IonGrid>
               <IonRow>
                 <IonCol size="12" sizeMd="6">
                   <IonButton
                     expand="block"
                     onClick={() => setShowSelecionarQuestoesModal(true)}
+                    disabled={!disciplinaId}
                   >
                     <IonIcon icon={search} slot="start" />
                     Selecionar Questões
@@ -334,6 +428,14 @@ const CriarSimulado: React.FC = () => {
                 </IonCol>
               </IonRow>
             </IonGrid>
+
+            {!disciplinaId && (
+              <IonText color="warning">
+                <p style={{ marginLeft: 12, fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  Selecione uma disciplina primeiro para ver as questões disponíveis
+                </p>
+              </IonText>
+            )}
 
             {errors.questoes && (
               <IonText color="danger">
@@ -387,7 +489,11 @@ const CriarSimulado: React.FC = () => {
 
         <IonModal
           isOpen={showSelecionarQuestoesModal}
-          onDidDismiss={() => setShowSelecionarQuestoesModal(false)}
+          onDidDismiss={() => {
+            setShowSelecionarQuestoesModal(false);
+            setSearchQuestao('');
+            setFiltroDisciplinaQuestoes('');
+          }}
         >
           <IonHeader>
             <IonToolbar color="primary">
@@ -408,10 +514,26 @@ const CriarSimulado: React.FC = () => {
               debounce={300}
             />
 
-            <div className="ion-padding">
+            <div className="ion-padding" style={{ paddingTop: 0 }}>
+              <IonItem lines="none">
+                <IonLabel position="stacked">Filtrar por disciplina</IonLabel>
+                <IonSelect
+                  value={filtroDisciplinaQuestoes}
+                  placeholder="Todas as disciplinas"
+                  onIonChange={e => handleFiltroDisciplina(e.detail.value)}
+                >
+                  <IonSelectOption value="">Todas as disciplinas</IonSelectOption>
+                  {disciplinas.map(d => (
+                    <IonSelectOption key={d.id} value={d.nome}>
+                      {d.nome}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+              </IonItem>
+
               <IonText color="medium">
-                <p style={{ fontSize: '0.9rem' }}>
-                  {questoesSelecionadas.length} questão(ões) selecionada(s)
+                <p style={{ fontSize: '0.9rem', marginTop: '1rem' }}>
+                  {questoesSelecionadas.length} questão(ões) selecionada(s) • {questoesFiltradas.length} encontrada(s)
                 </p>
               </IonText>
 

@@ -90,7 +90,7 @@ const QuestaoFormModal: React.FC<Props> = ({ isOpen, onDidDismiss, onQuestaoCrea
         respostaCorreta: alternativasLimpas[respostaCorreta]
       };
 
-      const response = await api.post('/questao', body);
+      const response = await api.post('/questoes', body);
       
       setToastMsg('Questão criada com sucesso!');
       onQuestaoCreated(response.data);
